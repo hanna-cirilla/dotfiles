@@ -46,7 +46,25 @@ pwsh_install_module() {
 
 # ── 1. Neovim config ─────────────────────────────────────────────────────────
 
-echo "→ Neovim config"
+echo "→ Neovim"
+if ! command -v nvim &>/dev/null; then
+    echo "  nvim not found — installing"
+    if command -v apt-get &>/dev/null; then
+        # Prefer the upstream AppImage-based installer for a recent nvim version;
+        # fall back to apt (which can ship an outdated build on older Ubuntu LTS).
+        if command -v curl &>/dev/null; then
+            NVIM_VERSION="v0.10.4"
+            curl -fsSL "https://github.com/neovim/neovim/releases/download/${NVIM_VERSION}/nvim-linux-x86_64.tar.gz" \
+                | sudo tar -xz -C /usr/local --strip-components=1
+            echo "  Installed nvim ${NVIM_VERSION} to /usr/local/bin/nvim"
+        else
+            sudo apt-get install -y --no-install-recommends neovim
+        fi
+    else
+        echo "  [skip] Neither apt-get nor curl available — install nvim manually"
+    fi
+fi
+
 if command -v nvim &>/dev/null; then
     NVIM_DIR="${XDG_CONFIG_HOME:-$HOME/.config}/nvim"
     link "nvim/init.lua" "$NVIM_DIR/init.lua"
@@ -56,8 +74,9 @@ if command -v nvim &>/dev/null; then
         cp "$DOTFILES_DIR/nvim/lazy-lock.json" "$NVIM_DIR/lazy-lock.json"
         echo "  Copied: lazy-lock.json (initial)"
     fi
+    echo "  nvim config linked ($(nvim --version | head -1))"
 else
-    echo "  [skip] nvim not found — install it to use the nvim config"
+    echo "  [skip] nvim still not available — config not linked"
 fi
 
 # ── 2. Oh My Posh theme ───────────────────────────────────────────────────────
