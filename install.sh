@@ -1,9 +1,13 @@
 #!/usr/bin/env bash
 # install.sh — dotfiles setup for Linux devcontainers
 # Installs: nvim config, PowerShell 7 profile, oh-my-posh theme, and all required tools/modules
-set -euo pipefail
+#
+# Uses set -uo (undefined vars are errors, pipefail on) but NOT set -e so that
+# individual tool installs can fail without aborting the whole script.
+set -uo pipefail
 
 DOTFILES_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+ERRORS=()
 
 # ── Helpers ───────────────────────────────────────────────────────────────────
 
@@ -44,24 +48,36 @@ pwsh_install_module() {
     fi
 }
 
-# ── 1. Neovim config ─────────────────────────────────────────────────────────
+# ── 1. Neovim ─────────────────────────────────────────────────────────────────
 
 echo "→ Neovim"
 if ! command -v nvim &>/dev/null; then
     echo "  nvim not found — installing"
-    if command -v apt-get &>/dev/null; then
-        # Prefer the upstream AppImage-based installer for a recent nvim version;
-        # fall back to apt (which can ship an outdated build on older Ubuntu LTS).
-        if command -v curl &>/dev/null; then
+    _installed=false
+    if command -v curl &>/dev/null && command -v apt-get &>/dev/null; then
+        # Detect CPU architecture for the correct tarball
+        _arch="$(uname -m)"
+        case "$_arch" in
+            x86_64)  _nvim_arch="x86_64" ;;
+            aarch64) _nvim_arch="arm64"  ;;
+            *)       _nvim_arch=""       ;;
+        esac
+
+        if [ -n "$_nvim_arch" ]; then
             NVIM_VERSION="v0.10.4"
-            curl -fsSL "https://github.com/neovim/neovim/releases/download/${NVIM_VERSION}/nvim-linux-x86_64.tar.gz" \
-                | sudo tar -xz -C /usr/local --strip-components=1
-            echo "  Installed nvim ${NVIM_VERSION} to /usr/local/bin/nvim"
-        else
-            sudo apt-get install -y --no-install-recommends neovim
+            _url="https://github.com/neovim/neovim/releases/download/${NVIM_VERSION}/nvim-linux-${_nvim_arch}.tar.gz"
+            if curl -fsSL "$_url" | sudo tar -xz -C /usr/local --strip-components=1; then
+                echo "  Installed nvim ${NVIM_VERSION} (${_nvim_arch})"
+                _installed=true
+            else
+                ERRORS+=("nvim: tarball install failed for ${_nvim_arch}")
+            fi
         fi
-    else
-        echo "  [skip] Neither apt-get nor curl available — install nvim manually"
+    fi
+
+    if [ "$_installed" = false ] && command -v apt-get &>/dev/null; then
+        echo "  Falling back to apt-get"
+        sudo apt-get install -y --no-install-recommends neovim || ERRORS+=("nvim: apt-get install failed")
     fi
 fi
 
@@ -69,13 +85,13 @@ if command -v nvim &>/dev/null; then
     NVIM_DIR="${XDG_CONFIG_HOME:-$HOME/.config}/nvim"
     link "nvim/init.lua" "$NVIM_DIR/init.lua"
     link "nvim/lua"      "$NVIM_DIR/lua"
-    # lazy-lock.json: copy on first install only; let lazy.nvim manage it afterwards
     if [ ! -f "$NVIM_DIR/lazy-lock.json" ]; then
         cp "$DOTFILES_DIR/nvim/lazy-lock.json" "$NVIM_DIR/lazy-lock.json"
         echo "  Copied: lazy-lock.json (initial)"
     fi
     echo "  nvim config linked ($(nvim --version | head -1))"
 else
+    ERRORS+=("nvim: not available — config not linked")
     echo "  [skip] nvim still not available — config not linked"
 fi
 
@@ -153,3 +169,11 @@ echo "Next steps:"
 echo "  • Open nvim — lazy.nvim will auto-install all plugins on first launch"
 echo "  • Start pwsh — modules (posh-git, Terminal-Icons, PSFzf) were installed above"
 echo "  • 'source ~/.bashrc' or restart your shell if PATH was updated"
+
+if [ ${#ERRORS[@]} -gt 0 ]; then
+    echo ""
+    echo "⚠️  Some steps had non-fatal errors:"
+    for e in "${ERRORS[@]}"; do
+        echo "    • $e"
+    done
+fi
