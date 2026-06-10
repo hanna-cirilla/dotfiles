@@ -1,4 +1,6 @@
-oh-my-posh init pwsh --config '~/.mytheme.omp.json' | Invoke-Expression
+if (Get-Command oh-my-posh -ErrorAction SilentlyContinue) {
+    oh-my-posh init pwsh --config '~/.mytheme.omp.json' | Invoke-Expression
+}
 Set-PSReadlineOption -PredictionSource HistoryAndPlugin
 Set-PSReadlineOption -ShowTooltips:$false
 Set-PSReadLineKeyHandler -Key Tab -Function MenuComplete
@@ -21,7 +23,7 @@ Set-PSReadLineOption -Colors @{
     Variable           = '#FFB86C'  # Orange   — $var
 }
 
-Import-Module posh-git
+if (Get-Module -ListAvailable -Name posh-git) { Import-Module posh-git }
 
 # Chocolatey profile
 $ChocolateyProfile = "$env:ChocolateyInstall\helpers\chocolateyProfile.psm1"
@@ -30,17 +32,21 @@ if (Test-Path($ChocolateyProfile))
   Import-Module "$ChocolateyProfile"
 }
 
-Invoke-Expression (& { (zoxide init powershell | Out-String) })
+if (Get-Command zoxide -ErrorAction SilentlyContinue) {
+    Invoke-Expression (& { (zoxide init powershell | Out-String) })
+}
 
 # ── Terminal-Icons ────────────────────────────────────────────────────────────
 # Nerd Font icons in Get-ChildItem output (Cascadia Code NF ✓)
-Import-Module -Name Terminal-Icons
+if (Get-Module -ListAvailable -Name Terminal-Icons) { Import-Module -Name Terminal-Icons }
 
 # ── PSFzf (fzf integration) ───────────────────────────────────────────────────
-Import-Module PSFzf
-Set-PsFzfOption -PSReadlineChordProvider       'Ctrl+t'   # file picker
-Set-PsFzfOption -PSReadlineChordReverseHistory 'Ctrl+r'   # history search
-Set-PsFzfOption -TabExpansion                             # git ** <Tab>
+if ((Get-Module -ListAvailable -Name PSFzf) -and (Get-Command fzf -ErrorAction SilentlyContinue)) {
+    Import-Module PSFzf
+    Set-PsFzfOption -PSReadlineChordProvider       'Ctrl+t'   # file picker
+    Set-PsFzfOption -PSReadlineChordReverseHistory 'Ctrl+r'   # history search
+    Set-PsFzfOption -TabExpansion                             # git ** <Tab>
+}
 
 $env:FZF_DEFAULT_OPTS    = '--height 50% --layout=reverse --border=rounded --prompt="  " --pointer="▶" --marker="✓"'
 $env:FZF_DEFAULT_COMMAND = 'rg --files --hidden --follow --glob "!{.git,node_modules,bin,obj}"'
