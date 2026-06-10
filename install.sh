@@ -49,7 +49,6 @@ pwsh_install_module() {
 echo "→ Neovim config"
 if command -v nvim &>/dev/null; then
     NVIM_DIR="${XDG_CONFIG_HOME:-$HOME/.config}/nvim"
-    mkdir -p "$NVIM_DIR/lua"
     link "nvim/init.lua" "$NVIM_DIR/init.lua"
     link "nvim/lua"      "$NVIM_DIR/lua"
     # lazy-lock.json: copy on first install only; let lazy.nvim manage it afterwards

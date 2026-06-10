@@ -1,6 +1,6 @@
 -- GitHub Copilot in nvim (lua-native, integrates with nvim-cmp)
 -- Node.js required: Volta v2.0.2, Node v20.15.1 ✓
--- After :Lazy sync, run :Copilot auth to authenticate against shs.ghe.com
+-- After :Lazy sync, run :Copilot auth
 return {
   {
     "zbirenbaum/copilot.lua",
@@ -21,8 +21,6 @@ return {
           json       = true,
           ["*"]      = false,
         },
-        -- GitHub Enterprise: redirects :Copilot auth to shs.ghe.com
-        auth_provider_url = "https://shs.ghe.com",
       })
     end,
   },

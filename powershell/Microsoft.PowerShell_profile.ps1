@@ -129,20 +129,3 @@ function todos {
 }
 
 function edit-profile { nvim $PROFILE }
-
-# ── Dev Container ─────────────────────────────────────────────────────────────
-function ucopilot {
-    $baseImage = 'for.artifactory.siemens-healthineers.com/di_ct/uniform-installation/devcontainer'
-    $container = docker ps --format '{{.Names}}\t{{.Image}}' |
-        Where-Object { ($_ -split "`t")[1] -like "$baseImage*" } |
-        Select-Object -First 1 |
-        ForEach-Object { ($_ -split "`t")[0] }
-
-    if (-not $container) {
-        Write-Error "No running container found for image: $baseImage"
-        return
-    }
-
-    Write-Host "→ Attaching Copilot session in container: $container" -ForegroundColor Cyan
-    docker exec -it -u vscode -w /workspaces/UniformInstallation -e ADO_TOKEN=$env:COPILOT_CLI_AZURE_DEVOPS_SERVER_TOKEN $container copilot
-}
