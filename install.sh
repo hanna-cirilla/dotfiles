@@ -111,15 +111,29 @@ link "prompt/.mytheme.omp.json" "$HOME/.mytheme.omp.json"
 if ! command -v oh-my-posh &>/dev/null; then
     echo "→ Installing oh-my-posh"
     if command -v curl &>/dev/null; then
-        # Install to /usr/local/bin (always on $PATH) when sudo is available;
-        # fall back to ~/.local/bin otherwise.
-        if command -v sudo &>/dev/null; then
-            curl -s https://ohmyposh.dev/install.sh | sudo bash -s -- -d /usr/local/bin \
-                || ERRORS+=("oh-my-posh: install to /usr/local/bin failed")
+        # Download the binary directly from GitHub releases (avoids piping to sudo).
+        _omp_arch=$(uname -m)
+        case "$_omp_arch" in
+            x86_64)  _omp_bin="posh-linux-amd64" ;;
+            aarch64) _omp_bin="posh-linux-arm64" ;;
+            *)       _omp_bin="" ;;
+        esac
+        if [ -n "$_omp_bin" ]; then
+            _omp_url="https://github.com/JanDeDobbeleer/oh-my-posh/releases/latest/download/$_omp_bin"
+            _omp_dest=/usr/local/bin/oh-my-posh
+            if command -v sudo &>/dev/null; then
+                sudo curl -fsSL "$_omp_url" -o "$_omp_dest" \
+                    && sudo chmod +x "$_omp_dest" \
+                    || ERRORS+=("oh-my-posh: download from GitHub releases failed")
+            else
+                mkdir -p "$HOME/.local/bin"
+                curl -fsSL "$_omp_url" -o "$HOME/.local/bin/oh-my-posh" \
+                    && chmod +x "$HOME/.local/bin/oh-my-posh" \
+                    || ERRORS+=("oh-my-posh: download from GitHub releases failed")
+                export PATH="$HOME/.local/bin:$PATH"
+            fi
         else
-            curl -s https://ohmyposh.dev/install.sh | bash -s -- -d "$HOME/.local/bin" \
-                || ERRORS+=("oh-my-posh: install to ~/.local/bin failed")
-            export PATH="$HOME/.local/bin:$PATH"
+            ERRORS+=("oh-my-posh: unsupported arch $_omp_arch")
         fi
     else
         echo "  [skip] curl not available — install oh-my-posh manually"
