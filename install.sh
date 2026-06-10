@@ -25,11 +25,18 @@ link() {
     echo "  Linked: $dest"
 }
 
+_APT_UPDATED=false
 apt_install() {
-    if command -v apt-get &>/dev/null; then
-        sudo apt-get install -y --no-install-recommends "$@" 2>/dev/null
+    if command -v apt-get &>/dev/null && command -v sudo &>/dev/null; then
+        if [ "$_APT_UPDATED" = false ]; then
+            echo "  Running apt-get update…"
+            sudo apt-get update -qq 2>/dev/null && _APT_UPDATED=true \
+                || ERRORS+=("apt-get update failed")
+        fi
+        sudo apt-get install -y --no-install-recommends "$@" 2>/dev/null \
+            || ERRORS+=("apt-get install $* failed")
     else
-        echo "  [skip] apt-get not available, skipping: $*"
+        echo "  [skip] apt-get/sudo not available, skipping: $*"
     fi
 }
 
@@ -104,8 +111,16 @@ link "prompt/.mytheme.omp.json" "$HOME/.mytheme.omp.json"
 if ! command -v oh-my-posh &>/dev/null; then
     echo "→ Installing oh-my-posh"
     if command -v curl &>/dev/null; then
-        curl -s https://ohmyposh.dev/install.sh | bash -s -- -d "$HOME/.local/bin"
-        export PATH="$HOME/.local/bin:$PATH"
+        # Install to /usr/local/bin (always on $PATH) when sudo is available;
+        # fall back to ~/.local/bin otherwise.
+        if command -v sudo &>/dev/null; then
+            curl -s https://ohmyposh.dev/install.sh | sudo bash -s -- -d /usr/local/bin \
+                || ERRORS+=("oh-my-posh: install to /usr/local/bin failed")
+        else
+            curl -s https://ohmyposh.dev/install.sh | bash -s -- -d "$HOME/.local/bin" \
+                || ERRORS+=("oh-my-posh: install to ~/.local/bin failed")
+            export PATH="$HOME/.local/bin:$PATH"
+        fi
     else
         echo "  [skip] curl not available — install oh-my-posh manually"
     fi
@@ -154,11 +169,20 @@ fi
 # zoxide — smarter cd; initialized in the PS profile
 if ! command -v zoxide &>/dev/null; then
     echo "  Installing zoxide"
-    # zoxide is not in all Ubuntu apt repos — prefer the official installer
+    # zoxide is not in all Ubuntu apt repos — prefer the official installer.
+    # Install to /usr/local/bin (always on $PATH) when sudo is available.
     if command -v curl &>/dev/null; then
-        curl -sSfL https://raw.githubusercontent.com/ajeetdsouza/zoxide/main/install.sh | sh
+        if command -v sudo &>/dev/null; then
+            curl -sSfL https://raw.githubusercontent.com/ajeetdsouza/zoxide/main/install.sh \
+                | sudo sh -s -- --bin-dir /usr/local/bin \
+                || ERRORS+=("zoxide: install failed")
+        else
+            curl -sSfL https://raw.githubusercontent.com/ajeetdsouza/zoxide/main/install.sh | sh \
+                || ERRORS+=("zoxide: install failed")
+            export PATH="$HOME/.local/bin:$PATH"
+        fi
     else
-        apt_install zoxide 2>/dev/null || echo "  [skip] zoxide install failed — install manually"
+        apt_install zoxide
     fi
 fi
 
