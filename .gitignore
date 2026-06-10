@@ -1,0 +1,11 @@
+# OS cruft
+.DS_Store
+Thumbs.db
+
+# lazy-lock.json is checked in for reproducibility but local updates are common;
+# keep it tracked so new machines start with pinned versions.
+# Remove the line below if you'd rather not track it:
+# nvim/lazy-lock.json
+
+# Backup files created by install.sh
+*.bak

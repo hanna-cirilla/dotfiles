@@ -1,0 +1,11 @@
+# Ensure Unix line endings for the install script on all platforms
+install.sh text eol=lf
+
+# Lua files: LF
+*.lua text eol=lf
+
+# PowerShell: CRLF on Windows, LF elsewhere
+*.ps1 text eol=crlf
+
+# JSON: LF
+*.json text eol=lf

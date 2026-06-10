@@ -1,0 +1,113 @@
+{
+  "$schema": "https://raw.githubusercontent.com/JanDeDobbeleer/oh-my-posh/main/themes/schema.json",
+  "version": 3,
+  "final_space": true,
+  "transient_prompt": {
+    "background": "transparent",
+    "foreground": "p:sky",
+    "template": "{{ now | date \"15:04:05\" }} \uf061 "
+  },
+  "blocks": [
+    {
+      "type": "rprompt",
+      "alignment": "left",
+      "segments": [
+        {
+          "type": "git",
+          "style": "diamond",
+          "leading_diamond": "\ue0b2",
+          "trailing_diamond": "\ue0b4",
+          "foreground": "p:base",
+          "background": "p:plum",
+          "template": " {{ substr 0 7 .Commit.Sha }} ",
+          "properties": {
+            "branch_icon": "",
+            "fetch_status": true,
+            "fetch_upstream_icon": true,
+            "source": "pwsh"
+          }
+        }
+      ]
+    },
+    {
+      "type": "prompt",
+      "alignment": "left",
+      "segments": [
+        {
+          "type": "status",
+          "style": "diamond",
+          "leading_diamond": "\ue0b6",
+          "background": "p:blush",
+          "background_templates": ["{{ if .Error}}p:tan{{ end }}"],
+          "foreground": "p:base",
+          "template": "{{ if .Error }}\uea87{{ else }}♥{{ end }} ",
+          "properties": {
+            "always_enabled": true
+          }
+        },
+	{
+          "type": "shell",
+          "style": "powerline",
+          "powerline_symbol": "\ue0b0",
+          "foreground": "p:white",
+          "background": "p:teal_blue",
+	  "template": " {{ .Name }}{{ substr 0 1 .Version }} ",
+          "properties": {
+            "mapped_shell_names": {
+	      "pwsh": "\ue683"
+            }
+	  }
+        },
+        {
+          "type": "path",
+          "style": "powerline",
+          "powerline_symbol": "\ue0b0",
+          "foreground": "p:base",
+          "background": "p:blush",
+          "template": " {{ .Path }} ",
+          "properties": {
+            "style": "folder"
+          }
+        },
+        {
+          "type": "git",
+          "style": "powerline",
+          "powerline_symbol": "\ue0b0",
+          "foreground": "p:base",
+          "background": "p:salmon",
+          "template": " {{ .HEAD }}{{if .BranchStatus }} {{ .BranchStatus }}{{ end }}{{ if .Staging.Changed }} \uF046 {{ .Staging.String }}{{ end }}{{ if .Working.Changed }} \uF044 {{ .Working.String }}{{ end }} ",
+          "properties": {
+            "branch_icon": "",
+            "fetch_status": true,
+            "fetch_upstream_icon": true,
+            "source": "pwsh",
+            "mapped_branches": {
+              "dev/*": "👩🏻‍💻/",
+              "fix/*": "🐛/",
+              "release/*": "📦/"
+            }
+          }
+        },
+        {
+          "type": "node",
+          "style": "powerline",
+          "powerline_symbol": "\ue0b0",
+          "foreground": "p:base",
+          "background": "p:sky",
+          "template": " \ue718 {{ if .PackageManagerIcon }}{{ .PackageManagerIcon }} {{ end }}{{ .Full }} "
+        }
+      ]
+    }
+  ],
+  "palette": {
+    "base":      "#282A36",
+    "blush":     "#FF79C6",
+    "plum":      "#BD93F9",
+    "salmon":    "#FFB86C",
+    "sky":       "#8BE9FD",
+    "tan":       "#FF5555",
+    "teal":      "#50FA7B",
+    "teal_blue": "#44475A",
+    "white":     "#F8F8F2"
+  }
+}
